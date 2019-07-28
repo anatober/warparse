@@ -3,9 +3,9 @@ const request = require('request-promise');
 const chalk = require('chalk');
 
 let _config = JSON.parse(fs.readFileSync('config.json'));
-init();
+_main();
 
-async function init() {
+async function _main() {
     //clear console
     process.stdout.write('\033c');
     let start = formatDate(new Date());
@@ -129,7 +129,7 @@ function sortByProfit(a, b) {
 
     if (a.profit > b.profit) {
         return -1;
-	}
+    }
 	
     return 0;
 }
