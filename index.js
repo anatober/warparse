@@ -24,7 +24,7 @@ async function _main() {
         .map(item => item.url_name);
 
     console.log('Found ' + chalk.green(sets.length) +
-    ' sets. Iterating...');
+        ' sets. Iterating...');
 
     //for each set
     for (let i = 0; i < sets.length; ++i) {
@@ -192,15 +192,7 @@ function formatDate(date) {
     return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + minutes + ':' + ss;
 }
 
-//https://stackoverflow.com/questions/32589197/capitalize-first-letter-of-each-word-in-a-string-javascript/32589256
 function titleCase(str) {
-    var splitStr = str.toLowerCase().split(' ');
-    for (var i = 0; i < splitStr.length; i++) {
-        // You do not need to check if i is larger than splitStr length, as your for does that for you
-        // Assign it back to the array
-        splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i]
-            .substring(1);
-    }
-    // Directly return the joined string
-    return splitStr.join(' ');
+    return str.toLowerCase().split(' ').map(word => word.charAt(0)
+    .toUpperCase() + word.substring(1)).join(' ');
 }
