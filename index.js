@@ -57,7 +57,7 @@ async function init() {
                     order.user.status != 'offline' &&
                     order.user.reputation >= _config.min_reputation &&
                     _config.platforms.includes(order.platform) &&
-                    _config.regions.includes(order.region) &&
+                    //_config.regions.includes(order.region) &&
                     order.visible)
                 .sort(sortByPrice)[_config.position], setParts[index].name, ducats[index]);
         });
