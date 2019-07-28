@@ -51,7 +51,7 @@ async function init() {
         allPartsOrders = allPartsOrders.map(curPartOrders => { 
             let index = allPartsOrders.indexOf(curPartOrders);
             //filter the orders and trim object on _config.position (0 by default, thus the cheapest one - sortByPrice())
-            return formatOrder(JSON.parse(curPartOrders).payload.orders
+            let order = JSON.parse(curPartOrders).payload.orders
                 .filter(order =>
                     order.order_type == 'sell' &&
                     order.user.status != 'offline' &&
@@ -59,19 +59,32 @@ async function init() {
                     _config.platforms.includes(order.platform) &&
                     //_config.regions.includes(order.region) &&
                     order.visible)
-                .sort(sortByPrice)[_config.position], setParts[index].name, ducats[index]);
+                .sort(sortByPrice)[_config.position];
+            return {
+                platinum: (order == undefined ? (setParts[index].name.endsWith('_set') ? -99999999 : 99999999) : order.platinum),
+                ducats: ducats[index],
+                part: 'https://warframe.market/items/' + setParts[index].name,
+                user: (order == undefined ? null : 'https://warframe.market/profile/' + order.user.ingame_name),
+                update: (order == undefined ? null : formatDate(new Date(order.last_update)))
+            };
         });
 
         //calculate the amount of plat needed to buy the set's parts and their sum in ducats
-        let reduced = allPartsOrders.reduce(reducer, {
+        let amounts = allPartsOrders.reduce((accumulator, currentValue) => {
+            if (!currentValue.part.endsWith('_set')) {
+               accumulator.needed += currentValue.platinum;
+               accumulator.ducats += currentValue.ducats;
+            }
+            return accumulator;
+        }, {
             needed: 0,
             ducats: 0
         });
 
         //get profit = set price - sum of part prices
-        let profit = allPartsOrders[0].platinum - reduced.needed;
+        let profit = allPartsOrders[0].platinum - amounts.needed;
 
-        //slightly dirty hack to check if some order was found - more info in formatOrder()
+        //slightly dirty hack to check if some order was found
         if (Math.abs(profit) > 5000) {
             console.log(chalk.red('Error: No fitting orders found.'));
             continue;
@@ -83,7 +96,7 @@ async function init() {
                 name,
                 orders: allPartsOrders
             },
-            ...reduced
+            ...amounts
         });
     }
 
@@ -97,17 +110,6 @@ async function init() {
     process.exit();
 }
 
-function formatOrder(order, part, ducats) {
-    //yeah i know, move along :(
-    return {
-        platinum: (order == undefined ? (part.endsWith('_set') ? -99999999 : 99999999) : order.platinum),
-        ducats,
-        part: 'https://warframe.market/items/' + part,
-        user: (order == undefined ? null : 'https://warframe.market/profile/' + order.user.ingame_name),
-        update: (order == undefined ? null : formatDate(new Date(order.last_update)))
-    };
-}
-
 function sortByPrice(a, b) {
     if (a.platinum < b.platinum) {
         return -1;
@@ -115,7 +117,7 @@ function sortByPrice(a, b) {
 
     if (a.platinum > b.platinum) {
         return 1;
-	}
+    }
 	
     return 0;
 }
@@ -183,11 +185,3 @@ function titleCase(str) {
     // Directly return the joined string
     return splitStr.join(' '); 
  }
-
- const reducer = (accumulator, currentValue) => {
-     if (!currentValue.part.endsWith('_set')) {
-        accumulator.needed += currentValue.platinum;
-        accumulator.ducats += currentValue.ducats;
-     }
-     return accumulator;
-};
