@@ -12,25 +12,32 @@ async function _main() {
     let result = [];
 
     //get all items from market
-    let items = JSON.parse(await request('https://api.warframe.market/v1/items')).payload.items;
+    let items = JSON.parse(await request(
+        'https://api.warframe.market/v1/items')).payload.items;
 
-    console.log('Found ' + chalk.green(items.length) + ' items. Filtering sets...');
+    console.log('Found ' + chalk.green(items.length) +
+        ' items. Filtering sets...');
 
     //get the items which names end with "_set"
     let sets = items
         .filter(item => item.url_name.endsWith('_set'))
         .map(item => item.url_name);
 
-    console.log('Found ' + chalk.green(sets.length) + ' sets. Iterating...');
-    
+    console.log('Found ' + chalk.green(sets.length) +
+    ' sets. Iterating...');
+
     //for each set
     for (let i = 0; i < sets.length; ++i) {
 
-        let name = titleCase(sets[i].slice(0, sets[i].length - 4).split('_').join(' '));
-        console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i < 9 ? '\t' : '') + chalk.yellow(name));
+        let name = titleCase(sets[i].slice(0, sets[i].length - 4).split('_')
+            .join(' '));
+        console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i <
+            9 ? '\t' : '') + chalk.yellow(name));
 
         //get sibling parts of this item (sets, blueprints, chassis, systems, barrels, links etc...)
-        let setParts = JSON.parse(await request('https://api.warframe.market/v1/items/' + sets[i])).payload.item.items_in_set
+        let setParts = JSON.parse(await request(
+                'https://api.warframe.market/v1/items/' + sets[i])).payload
+            .item.items_in_set
             .map(item => {
                 return {
                     //get its name and price in ducats
@@ -42,38 +49,49 @@ async function _main() {
             .sort(sortBySet);
 
         setParts.forEach(setPart => {
-            console.log(chalk.yellow('\t\t> ') + titleCase(setPart.name.split('_').join(' ')));
+            console.log(chalk.yellow('\t\t> ') + titleCase(setPart
+                .name.split('_').join(' ')));
         });
 
-        let ducats = setParts.map(setPart => (setPart.ducats == undefined ? 0 : setPart.ducats));
+        let ducats = setParts.map(setPart => (setPart.ducats == undefined ?
+            0 : setPart.ducats));
         //get existing orders for each of the existing items (including sets)
-        let allPartsOrders = await Promise.all(setParts.map(setPart => request('https://api.warframe.market/v1/items/' + setPart.name + '/orders')));
-        allPartsOrders = allPartsOrders.map(curPartOrders => { 
+        let allPartsOrders = await Promise.all(setParts.map(setPart =>
+            request('https://api.warframe.market/v1/items/' +
+                setPart.name + '/orders')));
+        allPartsOrders = allPartsOrders.map(curPartOrders => {
             let index = allPartsOrders.indexOf(curPartOrders);
             //filter the orders and trim object on _config.position (0 by default, thus the cheapest one - sortByPrice())
             let order = JSON.parse(curPartOrders).payload.orders
                 .filter(order =>
                     order.order_type == 'sell' &&
                     order.user.status != 'offline' &&
-                    order.user.reputation >= _config.min_reputation &&
+                    order.user.reputation >= _config
+                    .min_reputation &&
                     _config.platforms.includes(order.platform) &&
                     //_config.regions.includes(order.region) &&
                     order.visible)
                 .sort(sortByPrice)[_config.position];
             return {
-                platinum: (order == undefined ? (setParts[index].name.endsWith('_set') ? -99999999 : 99999999) : order.platinum),
+                platinum: (order == undefined ? (setParts[index]
+                    .name.endsWith('_set') ? -99999999 :
+                    99999999) : order.platinum),
                 ducats: ducats[index],
-                part: 'https://warframe.market/items/' + setParts[index].name,
-                user: (order == undefined ? null : 'https://warframe.market/profile/' + order.user.ingame_name),
-                update: (order == undefined ? null : formatDate(new Date(order.last_update)))
+                part: 'https://warframe.market/items/' + setParts[
+                    index].name,
+                user: (order == undefined ? null :
+                    'https://warframe.market/profile/' + order
+                    .user.ingame_name),
+                update: (order == undefined ? null : formatDate(
+                    new Date(order.last_update)))
             };
         });
 
         //calculate the amount of plat needed to buy the set's parts and their sum in ducats
         let amounts = allPartsOrders.reduce((accumulator, currentValue) => {
             if (!currentValue.part.endsWith('_set')) {
-               accumulator.needed += currentValue.platinum;
-               accumulator.ducats += currentValue.ducats;
+                accumulator.needed += currentValue.platinum;
+                accumulator.ducats += currentValue.ducats;
             }
             return accumulator;
         }, {
@@ -118,7 +136,7 @@ function sortByPrice(a, b) {
     if (a.platinum > b.platinum) {
         return 1;
     }
-	
+
     return 0;
 }
 
@@ -130,7 +148,7 @@ function sortByProfit(a, b) {
     if (a.profit > b.profit) {
         return -1;
     }
-	
+
     return 0;
 }
 
@@ -157,7 +175,7 @@ function formatDate(date) {
 
     if (dd < 10) {
         dd = '0' + dd;
-    } 
+    }
     if (mm < 10) {
         mm = '0' + mm;
     }
@@ -180,8 +198,9 @@ function titleCase(str) {
     for (var i = 0; i < splitStr.length; i++) {
         // You do not need to check if i is larger than splitStr length, as your for does that for you
         // Assign it back to the array
-        splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i].substring(1);     
+        splitStr[i] = splitStr[i].charAt(0).toUpperCase() + splitStr[i]
+            .substring(1);
     }
     // Directly return the joined string
-    return splitStr.join(' '); 
- }
+    return splitStr.join(' ');
+}
