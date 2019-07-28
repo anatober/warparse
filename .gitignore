@@ -61,4 +61,4 @@ typings/
 .next
 
 #custom
-package_lock.json
+package-lock.json
