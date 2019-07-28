@@ -2,5 +2,5 @@
     "position": 0,
     "min_reputation": 5,
     "platforms": ["pc"],
-    "regions": ["en"]
+    "regions": ["en", "ru"]
 }

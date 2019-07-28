@@ -62,3 +62,4 @@ typings/
 
 #custom
 package-lock.json
+data.json
