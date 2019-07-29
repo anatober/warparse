@@ -59,8 +59,7 @@ async function _main() {
         let allPartsOrders = await Promise.all(setParts.map(setPart =>
             request('https://api.warframe.market/v1/items/' +
                 setPart.name + '/orders')));
-        allPartsOrders = allPartsOrders.map(curPartOrders => {
-            let index = allPartsOrders.indexOf(curPartOrders);
+        allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
             //filter the orders and trim object on _config.position (0 by default, thus the cheapest one - sortByPrice())
             let order = JSON.parse(curPartOrders).payload.orders
                 .filter(order =>
