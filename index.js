@@ -48,6 +48,12 @@ async function _main() {
             //make sure that "_set" item is always the first one in array
             .sort(sortBySet);
 
+        if (_config.only_warframes && !setParts.some(setPart => setPart.name
+                .includes("neuroptics"))) {
+            console.log("Only warframes. Skipping...");
+            continue;
+        }
+
         setParts.forEach(setPart => {
             console.log(chalk.yellow('\t\t> ') + titleCase(setPart
                 .name.split('_').join(' ')));
@@ -67,24 +73,35 @@ async function _main() {
                     order.user.status != 'offline' &&
                     order.user.reputation >= _config
                     .min_reputation &&
+                    order.platinum >= _config.min_price &&
+                    order.platinum <= _config.max_price &&
                     _config.platforms.includes(order.platform) &&
                     //_config.regions.includes(order.region) &&
                     order.visible)
                 .sort(sortByPrice)[_config.position];
-            return {
-                platinum: (order == undefined ? (setParts[index]
-                    .name.endsWith('_set') ? -99999999 :
-                    99999999) : order.platinum),
-                ducats: ducats[index],
-                part: 'https://warframe.market/items/' + setParts[
-                    index].name,
-                user: (order == undefined ? null :
-                    'https://warframe.market/profile/' + order
-                    .user.ingame_name),
-                update: (order == undefined ? null : formatDate(
-                    new Date(order.last_update)))
-            };
+            if (order != undefined) {
+                return {
+                    platinum: order.platinum,
+                    ducats: ducats[index],
+                    message: '/w ' + order.user.ingame_name +
+                        ' I want to buy [' + titleCase(setParts[
+                            index].name.split('_').join(' ')) +
+                        '] for ' + order.platinum +
+                        ' :platinum: (warframe.market)',
+                    part: 'https://warframe.market/items/' +
+                        setParts[index].name,
+                    user: 'https://warframe.market/profile/' + order
+                        .user.ingame_name,
+                    update: formatDate(new Date(order.last_update))
+                };
+            }
         });
+
+        //not found any orders for some parts of this set -> move on to the next one
+        if (allPartsOrders.some(value => value == undefined)) {
+            console.log(chalk.red('Error: No fitting orders found.'));
+            continue;
+        }
 
         //calculate the amount of plat needed to buy the set's parts and their sum in ducats
         let amounts = allPartsOrders.reduce((accumulator, currentValue) => {
@@ -98,18 +115,10 @@ async function _main() {
             ducats: 0
         });
 
-        //get profit = set price - sum of part prices
-        let profit = allPartsOrders[0].platinum - amounts.needed;
-
-        //slightly dirty hack to check if some order was found
-        if (Math.abs(profit) > 5000) {
-            console.log(chalk.red('Error: No fitting orders found.'));
-            continue;
-        }
-
         result.push({
             ...{
-                profit,
+                //get profit = set price - sum of part prices
+                profit: allPartsOrders[0].platinum - amounts.needed,
                 name,
                 orders: allPartsOrders
             },
@@ -163,7 +172,6 @@ function sortBySet(a, b) {
     return 0;
 }
 
-//https://stackoverflow.com/questions/12409299/how-to-get-current-formatted-date-dd-mm-yyyy-in-javascript-and-append-it-to-an-i
 function formatDate(date) {
     let dd = date.getDate();
     let mm = date.getMonth() + 1; //January is 0!
@@ -193,5 +201,5 @@ function formatDate(date) {
 
 function titleCase(str) {
     return str.toLowerCase().split(' ').map(word => word.charAt(0)
-    .toUpperCase() + word.substring(1)).join(' ');
+        .toUpperCase() + word.substring(1)).join(' ');
 }
