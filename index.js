@@ -178,14 +178,20 @@ async function parse() {
     let end = new Date();
     let formattedEnd = formatDate(end);
 
-    clipboardy.writeSync(result[0].orders.map(order => order.message).slice(
-        1).join('\n'));
+    if (_config.copy_messages_to_clipboard) {
+        clipboardy.writeSync(result[_config.result_to_copy_messages_from]
+            .orders.map(order => order.message).slice(1).join('\n'));
+    }
 
     let filePath = _config.parse_folder_name + '/' + formattedEnd.split(' ')
-        .join('_') + '.json';
+        .join('/') + '.json';
 
     if (!fs.existsSync(_config.parse_folder_name)) {
         fs.mkdirSync(_config.parse_folder_name);
+        let secondFolder = filePath.split('/').slice(0, -1).join('/');
+        if (!fs.existsSync(secondFolder)) {
+            fs.mkdirSync(secondFolder);
+        }
         fs.openSync(filePath, 'w');
     }
 
