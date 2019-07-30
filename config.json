@@ -8,5 +8,6 @@
     "statuses": ["ingame", "online"],
     "min_price": 2,
     "max_price": 500,
-    "only_warframes": true
+    "only_warframes": true,
+    "consolidation_interval": 3600000
 }
