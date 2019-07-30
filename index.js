@@ -163,14 +163,14 @@ async function parse() {
     let filePath = 'data.json';
     _config.parse.folder + '/' + formattedEnd.split(' ').join('/') +
     '.json';
-    if (!fs.existsSync(_config.parse.folder)) {
+    /*if (!fs.existsSync(_config.parse.folder)) {
         fs.mkdirSync(_config.parse.folder);
         let secondFolder = filePath.split('/').slice(0, -1).join('/');
         if (!fs.existsSync(secondFolder)) {
             fs.mkdirSync(secondFolder);
         }
         fs.openSync(filePath, 'w');
-    }
+    }*/
     fs.writeFileSync(filePath, JSON.stringify({
         config: (_config.put_config_in_output ? _config : null),
         start: formatDate(start),
