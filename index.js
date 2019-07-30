@@ -3,11 +3,9 @@ const request = require('request-promise');
 const chalk = require('chalk');
 const clipboardy = require('clipboardy');
 const os = require('os');
-
 let _config = {};
 let error = false;
 readConfig();
-
 if (!error) {
     if (process.argv.length <= 2) {
         parse();
@@ -17,16 +15,11 @@ if (!error) {
         setInterval(consolidate, _config.consolidation_interval);
     }
 }
-
 async function consolidate() {}
-
 async function parse() {
-
     process.stdout.write('\033c');
-
     let start = new Date();
     let result = [];
-
     let items = await getAllItems();
     console.log('Found ' + chalk.green(items.length) +
         ' items. Filtering sets...');
@@ -34,34 +27,33 @@ async function parse() {
         item => item.url_name);
     console.log('Found ' + chalk.green(sets.length) +
     ' sets. Iterating...');
-
     for (let i = 0; i < sets.length; ++i) {
         try {
-            let name = titleCase(sets[i].slice(0, sets[i].length - 4).split('_')
-                .join(' '));
-            console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i <
-                9 ? '\t' : '') + chalk.yellow(name));
+            let name = titleCase(sets[i].slice(0, sets[i].length - 4).split(
+                '_').join(' '));
+            console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (
+                i < 9 ? '\t' : '') + chalk.yellow(name));
             let setParts = (await getSiblingItems(sets[i])).map(item => {
-                    return {
-                        name: item.url_name,
-                        ducats: item.ducats
-                    };
-                }).sort((a, b) => {
-                    if (a.name.includes('_set')) {
-                        return -1;
-                    }
-                    if (b.name.includes('_set')) {
-                        return 1;
-                    }
-                    return 0;
-                });
+                return {
+                    name: item.url_name,
+                    ducats: item.ducats
+                };
+            }).sort((a, b) => {
+                if (a.name.includes('_set')) {
+                    return -1;
+                }
+                if (b.name.includes('_set')) {
+                    return 1;
+                }
+                return 0;
+            });
             if (_config.filter.only_warframes && !setParts.some(setPart =>
                     setPart.name.includes("neuroptics"))) {
                 console.log("Only warframes. Skipping...");
                 continue;
             }
-            let ducats = setParts.map(setPart => (setPart.ducats == undefined ?
-                0 : setPart.ducats));
+            let ducats = setParts.map(setPart => (setPart.ducats ==
+                undefined ? 0 : setPart.ducats));
             let allPartsOrders = await Promise.all(setParts.map(setPart =>
                 getItemOrders(setPart.name)));
             setParts.forEach(setPart => {
@@ -69,55 +61,63 @@ async function parse() {
                     .name.split('_').join(' ')));
             });
             allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
-                let sortedOrders = JSON.parse(curPartOrders).payload.orders
-                .filter(order =>
-                    order.order_type == _config.filter.type
-                    && _config.filter.statuses.includes(order
-                        .user.status) && (order.user.reputation >=
-                        _config.filter.min_reputation || index == 0
-                        )
-                    && !_config.blacklist[_config.nick]
-                    .includes(order.user.ingame_name)
-                    && order.platinum >= _config.filter.min_price
-                    && order.platinum <= _config.filter.max_price
-                    && _config.filter.platforms.includes(order.platform)
-                    && _config.filter.regions.includes(order.region)
-                    && differenceInDays(start, new Date(order
-                        .last_update)) <= _config.filter
-                    .max_days_diff && order.visible).sort((a,
-                b) => {
-                    if (a.platinum < b.platinum) {
-                        return _config.filter.type == 'sell' ?
-                            1 : 1;
-                    }
-                    if (a.platinum > b.platinum) {
-                        return _config.filter.type == 'sell' ?
-                            1 : -1;
-                    }
-                    return 0;
-                });
-                let position = index == 0 ? _config.filter.set_position : _config.filter.part_position;
-                let order = sortedOrders[position >= sortedOrders.length ? sortedOrders.length - 1 : position];
+                let sortedOrders = JSON.parse(curPartOrders).payload
+                    .orders.filter(order => order.order_type ==
+                        _config.filter.type && _config.filter
+                        .statuses.includes(order.user.status) && (
+                            order.user.reputation >= _config.filter
+                            .min_reputation || index == 0) && !
+                        _config.blacklist[_config.nick].includes(
+                            order.user.ingame_name) && order
+                        .platinum >= _config.filter.min_price &&
+                        order.platinum <= _config.filter
+                        .max_price && _config.filter.platforms
+                        .includes(order.platform) && _config.filter
+                        .regions.includes(order.region) &&
+                        differenceInDays(start, new Date(order
+                            .last_update)) <= _config.filter
+                        .max_days_diff && order.visible).sort((a,
+                        b) => {
+                            if (a.platinum < b.platinum) {
+                                return _config.filter.type ==
+                                    'sell' ? 1 : 1;
+                            }
+                            if (a.platinum > b.platinum) {
+                                return _config.filter.type ==
+                                    'sell' ? 1 : -1;
+                            }
+                            return 0;
+                        });
+                let position = index == 0 ? _config.filter
+                    .set_position : _config.filter.part_position;
+                let order = sortedOrders[position >= sortedOrders
+                    .length ? sortedOrders.length - 1 : position
+                    ];
                 if (order != undefined) {
                     return {
                         platinum: order.platinum,
                         ducats: ducats[index],
                         message: '/w ' + order.user.ingame_name +
-                            ' hi! ' + ((_config.filter.type == 'sell') ?
-                                'wtb your ' : 'wts my ') + (setParts[
-                                    index].name.includes('blueprint') ?
-                                ('[' + titleCase(setParts[index].name
-                                    .split('_').slice(0, -1).join(
-                                        ' ')) + '] bp') : ('[' +
+                            ' hi! ' + ((_config.filter.type ==
+                                    'sell') ? 'wtb your ' :
+                                'wts my ') + (setParts[index].name
+                                .includes('blueprint') ? ('[' +
                                     titleCase(setParts[index].name
-                                        .split('_').join(' ')) + ']')) +
-                            (_config.parse.plat_in_message ? ' for ' + order.platinum + ' :platinum:' : '') + ' :)',
+                                        .split('_').slice(0, -1)
+                                        .join(' ')) + '] bp') : (
+                                    '[' + titleCase(setParts[index]
+                                        .name.split('_').join(' ')
+                                        ) + ']')) + (_config.parse
+                                .plat_in_message ? ' for ' + order
+                                .platinum + ' :platinum:' : '') +
+                            ' :)',
                         region: order.region,
                         part: 'https://warframe.market/items/' +
                             setParts[index].name,
-                        user: 'https://warframe.market/profile/' + order
-                            .user.ingame_name,
-                        update: formatDate(new Date(order.last_update))
+                        user: 'https://warframe.market/profile/' +
+                            order.user.ingame_name,
+                        update: formatDate(new Date(order
+                            .last_update))
                     };
                 }
             });
@@ -141,14 +141,14 @@ async function parse() {
             }
             result.push({
                 ...{
-                    profit: allPartsOrders[0].platinum - amounts.needed,
+                    profit: allPartsOrders[0].platinum - amounts
+                        .needed,
                     name,
                     orders: allPartsOrders
                 },
                 ...amounts
             });
-        }
-        catch (e) {
+        } catch (e) {
             console.log(chalk.red("Something went wrong."));
         }
     }
@@ -171,14 +171,14 @@ async function parse() {
     let filePath = 'data.json';
     _config.parse.folder + '/' + formattedEnd.split(' ').join('/') +
     '.json';
-    /*if (!fs.existsSync(_config.parse.folder)) {
+    if (!fs.existsSync(_config.parse.folder)) {
         fs.mkdirSync(_config.parse.folder);
         let secondFolder = filePath.split('/').slice(0, -1).join('/');
         if (!fs.existsSync(secondFolder)) {
             fs.mkdirSync(secondFolder);
         }
         fs.openSync(filePath, 'w');
-    }*/
+    }
     fs.writeFileSync(filePath, JSON.stringify({
         config: (_config.put_config_in_output ? _config : null),
         start: formatDate(start),
@@ -253,17 +253,18 @@ function readConfig() {
             ']'));
     }
 }
-
 async function getAllItems() {
-    return JSON.parse(await request('https://api.warframe.market/v1/items')).payload.items;
+    return JSON.parse(await request('https://api.warframe.market/v1/items'))
+        .payload.items;
 }
-
 async function getSiblingItems(itemName) {
-    return JSON.parse(await request('https://api.warframe.market/v1/items/' + itemName)).payload.item.items_in_set;
+    return JSON.parse(await request(
+            'https://api.warframe.market/v1/items/' + itemName)).payload
+        .item.items_in_set;
 }
-
 async function getItemOrders(itemName) {
-    return request('https://api.warframe.market/v1/items/' + itemName + '/orders');
+    return request('https://api.warframe.market/v1/items/' + itemName +
+        '/orders');
 }
 
 function differenceInSeconds(date1, date2) {
