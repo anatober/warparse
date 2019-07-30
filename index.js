@@ -151,9 +151,8 @@ async function parse() {
         }
 
         //calculate the amount of plat needed to buy the set's parts and their sum in ducats
-        let amounts = allPartsOrders.reduce((accumulator, currentValue) => {
-            accumulator.needed += currentValue.part.endsWith(
-                '_set') ? 0 : currentValue.platinum;
+        let amounts = allPartsOrders.reduce((accumulator, currentValue, index) => {
+            accumulator.needed += index == 0 ? 0 : currentValue.platinum;
             accumulator.ducats += currentValue.ducats;
             return accumulator;
         }, {
