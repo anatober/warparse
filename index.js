@@ -13,6 +13,7 @@ if (!error) {
         parse();
     } else if (process.argv.includes('--consolidation') || process.argv
         .includes('-c')) {
+        consolidate();
         setInterval(consolidate, _config.consolidation_interval);
     }
 }
@@ -295,6 +296,6 @@ function differenceInSeconds(date1, date2) {
 }
 
 function differenceInDays(date1, date2) {
-    return Math.abs(Math.floor(date1.getTime() - date2.getTime())) / (1000 *
+    return Math.abs(date1.getTime() - date2.getTime()) / (1000 *
         60 * 60 * 24);
 }
