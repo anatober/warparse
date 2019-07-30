@@ -2,5 +2,8 @@
     "position": 0,
     "min_reputation": 5,
     "platforms": ["pc"],
-    "regions": ["en", "ru"]
+    "regions": ["en"],
+    "min_price": 1,
+    "max_price": 500,
+    "only_warframes": true
 }
