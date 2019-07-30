@@ -9,5 +9,7 @@
     "min_price": 2,
     "max_price": 500,
     "only_warframes": true,
-    "consolidation_interval": 3600000
+    "consolidation_interval": 3600000,
+    "parse_folder_name": "./parse",
+    "consolidation_folder_name": "./consolidation"
 }
