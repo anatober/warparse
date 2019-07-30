@@ -63,3 +63,5 @@ typings/
 #custom
 package-lock.json
 data.json
+parse/
+consolidation/
