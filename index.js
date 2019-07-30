@@ -106,7 +106,9 @@ async function parse() {
                     _config.filter.platforms.includes(order
                         .platform) &&
                     _config.filter.regions.includes(order.region) &&
-                    order.visible)
+                    differenceInDays(start, new Date(order
+                        .last_update)) <=
+                    _config.filter.max_days_diff && order.visible)
                 .sort((a, b) => {
 
                     if (a.platinum < b.platinum) {
@@ -265,7 +267,7 @@ function readConfig() {
         .platforms ||
         _config.filter.platforms.length == 0 || !_config
         .filter.platforms.every(platform => platformValues.includes(platform))
-        ) {
+    ) {
         error = true;
         console.log(chalk.red('Error, platforms can only be a part of [' +
             platformValues.map(value => "'" + value + "'").join(', ') +
@@ -291,4 +293,9 @@ function readConfig() {
 
 function differenceInSeconds(date1, date2) {
     return Math.abs(date1.getTime() - date2.getTime()) / 1000;
+}
+
+function differenceInDays(date1, date2) {
+    return Math.abs(Math.floor(date1.getTime() - date2.getTime())) / (1000 *
+        60 * 60 * 24);
 }
