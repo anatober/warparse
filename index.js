@@ -84,7 +84,7 @@ async function _main() {
                 setPart.name + '/orders')));
 
         allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
-            //filter the orders and trim object on _config.position (0 by default, thus the cheapest one - sortByPrice())
+            //filter the orders
             let order = JSON.parse(curPartOrders).payload.orders
                 .filter(order =>
                     order.order_type == _config.type &&
@@ -107,7 +107,8 @@ async function _main() {
                     }
 
                     return 0;
-                })[_config.position];
+                })[index == 0 ? _config.set_position : _config
+                    .part_position];
             if (order != undefined) {
                 return {
                     platinum: order.platinum,
