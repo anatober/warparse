@@ -73,7 +73,8 @@ async function parse() {
                 return 0;
             });
 
-        if (_config.only_warframes && !setParts.some(setPart => setPart.name
+        if (_config.filter.only_warframes && !setParts.some(setPart =>
+                setPart.name
                 .includes("neuroptics"))) {
             console.log("Only warframes. Skipping...");
             continue;
@@ -95,34 +96,39 @@ async function parse() {
             //filter the orders
             let order = JSON.parse(curPartOrders).payload.orders
                 .filter(order =>
-                    order.order_type == _config.type &&
-                    _config.statuses.includes(order.user.status) &&
+                    order.order_type == _config.filter.type &&
+                    _config.filter.statuses.includes(order.user
+                        .status) &&
                     order.user.reputation >= _config
-                    .min_reputation &&
-                    order.platinum >= _config.min_price &&
-                    order.platinum <= _config.max_price &&
-                    _config.platforms.includes(order.platform) &&
-                    _config.regions.includes(order.region) &&
+                    .filter.min_reputation &&
+                    order.platinum >= _config.filter.min_price &&
+                    order.platinum <= _config.filter.max_price &&
+                    _config.filter.platforms.includes(order
+                        .platform) &&
+                    _config.filter.regions.includes(order.region) &&
                     order.visible)
                 .sort((a, b) => {
 
                     if (a.platinum < b.platinum) {
-                        return _config.type == 'sell' ? -1 : 1;
+                        return _config.filter.type == 'sell' ? -
+                            1 : 1;
                     }
 
                     if (a.platinum > b.platinum) {
-                        return _config.type == 'sell' ? 1 : -1;
+                        return _config.filter.type == 'sell' ?
+                            1 : -1;
                     }
 
                     return 0;
-                })[index == 0 ? _config.set_position : _config
-                    .part_position];
+                })[index == 0 ? _config.filter.set_position :
+                    _config
+                    .filter.part_position];
             if (order != undefined) {
                 return {
                     platinum: order.platinum,
                     ducats: ducats[index],
                     message: '/w ' + order.user.ingame_name +
-                        (_config.type == 'sell' ?
+                        (_config.filter.type == 'sell' ?
                             ' hi! wtb your [' : 'hi! wts my [') +
                         titleCase(setParts[
                             index].name.split('_').join(' ')) +
@@ -166,11 +172,11 @@ async function parse() {
 
     result = result.sort((a, b) => {
         if (a.profit < b.profit) {
-            return _config.type == 'sell' ? 1 : -1;
+            return _config.filter.type == 'sell' ? 1 : -1;
         }
 
         if (a.profit > b.profit) {
-            return _config.type == 'sell' ? -1 : 1;
+            return _config.filter.type == 'sell' ? -1 : 1;
         }
 
         return 0;
@@ -179,16 +185,17 @@ async function parse() {
     let end = new Date();
     let formattedEnd = formatDate(end);
 
-    if (_config.copy_messages_to_clipboard) {
-        clipboardy.writeSync(result[_config.result_to_copy_messages_from]
+    if (_config.parse.copy_messages_to_clipboard) {
+        clipboardy.writeSync(result[_config.parse
+                .result_to_copy_messages_from]
             .orders.map(order => order.message).slice(1).join(os.EOL));
     }
 
-    let filePath = _config.parse_folder_name + '/' + formattedEnd.split(' ')
+    let filePath = _config.parse.folder + '/' + formattedEnd.split(' ')
         .join('/') + '.json';
 
-    if (!fs.existsSync(_config.parse_folder_name)) {
-        fs.mkdirSync(_config.parse_folder_name);
+    if (!fs.existsSync(_config.parse.folder)) {
+        fs.mkdirSync(_config.parse.folder);
         let secondFolder = filePath.split('/').slice(0, -1).join('/');
         if (!fs.existsSync(secondFolder)) {
             fs.mkdirSync(secondFolder);
@@ -249,27 +256,32 @@ function readConfig() {
     let statusValues = ['ingame', 'online', 'offline'];
     let regionValues = ['en', 'ru', 'fr', 'de', 'ko', 'zh', 'sv'];
 
-    if (!_config.hasOwnProperty('type') || !typeValues.includes(_config.type)) {
+    if (!_config.filter.hasOwnProperty('type') || !typeValues.includes(_config
+            .filter.type)) {
         error = true;
         console.log(chalk.red('Error, type can only be a part of [' + typeValues
             .map(value => "'" + value + "'").join(', ') + ']'));
-    } else if (!_config.hasOwnProperty('platforms') || !_config.platforms ||
-        _config.platforms.length == 0 || !_config
-        .platforms.every(platform => platformValues.includes(platform))) {
+    } else if (!_config.filter.hasOwnProperty('platforms') || !_config.filter
+        .platforms ||
+        _config.filter.platforms.length == 0 || !_config
+        .filter.platforms.every(platform => platformValues.includes(platform))
+        ) {
         error = true;
         console.log(chalk.red('Error, platforms can only be a part of [' +
             platformValues.map(value => "'" + value + "'").join(', ') +
             ']'));
-    } else if (!_config.hasOwnProperty('statuses') || !_config.statuses ||
-        _config.statuses.length == 0 || !_config
-        .statuses.every(status => statusValues.includes(status))) {
+    } else if (!_config.filter.hasOwnProperty('statuses') || !_config.filter
+        .statuses ||
+        _config.filter.statuses.length == 0 || !_config
+        .filter.statuses.every(status => statusValues.includes(status))) {
         error = true;
         console.log(chalk.red('Error, statuses can only be a part of [' +
             statusValues.map(value => "'" + value + "'").join(', ') +
             ']'));
-    } else if (!_config.hasOwnProperty('regions') || !_config.regions || _config
-        .regions.length == 0 || !_config
-        .regions.every(region => regionValues.includes(region))) {
+    } else if (!_config.filter.hasOwnProperty('regions') || !_config.filter
+        .regions || _config
+        .filter.regions.length == 0 || !_config
+        .filter.regions.every(region => regionValues.includes(region))) {
         error = true;
         console.log(chalk.red('Error, regions can only be a part of [' +
             regionValues.map(value => "'" + value + "'").join(', ') +
