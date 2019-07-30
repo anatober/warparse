@@ -1,9 +1,11 @@
 {
     "position": 0,
-    "min_reputation": 5,
+    "type": "sell",
+    "min_reputation": 0,
     "platforms": ["pc"],
-    "regions": ["en"],
-    "min_price": 1,
+    "regions": ["en", "ru", "fr", "de", "ko", "zh", "sv"],
+    "statuses": ["ingame", "online"],
+    "min_price": 2,
     "max_price": 500,
     "only_warframes": true
 }
