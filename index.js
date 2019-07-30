@@ -72,34 +72,35 @@ async function parse() {
                 .name.split('_').join(' ')));
         });
         allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
-            let order = JSON.parse(curPartOrders).payload.orders
-                .filter(order =>
-                    order.order_type == _config.filter.type
-                    && _config.filter.statuses.includes(order
-                        .user.status) && (order.user.reputation >=
-                        _config.filter.min_reputation || index == 0
-                        )
-                    && !_config.blacklist[_config.nick]
-                    .includes(order.user.ingame_name)
-                    && order.platinum >= _config.filter.min_price
-                    && order.platinum <= _config.filter.max_price
-                    && _config.filter.platforms.includes(order.platform)
-                    && _config.filter.regions.includes(order.region)
-                    && differenceInDays(start, new Date(order
-                        .last_update)) <= _config.filter
-                    .max_days_diff && order.visible).sort((a,
-                b) => {
-                    if (a.platinum < b.platinum) {
-                        return _config.filter.type == 'sell' ?
-                            1 : 1;
-                    }
-                    if (a.platinum > b.platinum) {
-                        return _config.filter.type == 'sell' ?
-                            1 : -1;
-                    }
-                    return 0;
-                })[index == 0 ? _config.filter.set_position :
-                    _config.filter.part_position];
+            let sortedOrders = JSON.parse(curPartOrders).payload.orders
+            .filter(order =>
+                order.order_type == _config.filter.type
+                && _config.filter.statuses.includes(order
+                    .user.status) && (order.user.reputation >=
+                    _config.filter.min_reputation || index == 0
+                    )
+                && !_config.blacklist[_config.nick]
+                .includes(order.user.ingame_name)
+                && order.platinum >= _config.filter.min_price
+                && order.platinum <= _config.filter.max_price
+                && _config.filter.platforms.includes(order.platform)
+                && _config.filter.regions.includes(order.region)
+                && differenceInDays(start, new Date(order
+                    .last_update)) <= _config.filter
+                .max_days_diff && order.visible).sort((a,
+            b) => {
+                if (a.platinum < b.platinum) {
+                    return _config.filter.type == 'sell' ?
+                        1 : 1;
+                }
+                if (a.platinum > b.platinum) {
+                    return _config.filter.type == 'sell' ?
+                        1 : -1;
+                }
+                return 0;
+            });
+            let position = index == 0 ? _config.filter.set_position : _config.filter.part_position;
+            let order = sortedOrders[position >= sortedOrders.length ? sortedOrders.length - 1 : position];
             if (order != undefined) {
                 return {
                     platinum: order.platinum,
