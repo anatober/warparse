@@ -1,16 +1,16 @@
 {
 	"filter": {
 		"set_position": 0,
-	    "part_position": 0,
-	    "type": "sell",
-	    "min_reputation": 0,
-	    "platforms": ["pc"],
-	    "regions": ["en", "ru", "fr", "de", "ko", "zh", "sv"],
-	    "statuses": ["ingame", "online"],
-	    "min_price": 2,
-	    "max_price": 500,
-	    "only_warframes": true,
-	    "max_days_diff": 2
+		"part_position": 0,
+		"type": "sell",
+		"min_reputation": 0,
+		"platforms": ["pc"],
+		"regions": ["en", "ru", "fr", "de", "ko", "zh", "sv"],
+		"statuses": ["ingame", "online"],
+		"min_price": 2,
+		"max_price": 500,
+		"only_warframes": true,
+		"max_days_diff": 2
 	},
 	"parse": {
 		"folder": "./parse",
