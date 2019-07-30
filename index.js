@@ -80,7 +80,7 @@ async function parse() {
                         b) => {
                             if (a.platinum < b.platinum) {
                                 return _config.filter.type ==
-                                    'sell' ? 1 : 1;
+                                    'sell' ? -1 : 1;
                             }
                             if (a.platinum > b.platinum) {
                                 return _config.filter.type ==
