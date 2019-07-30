@@ -267,22 +267,16 @@ function readConfig() {
             .join(', ') + ']'));
     }
 }
-async
-
-function getAllItems() {
+async function getAllItems() {
     return JSON.parse(await request('https://api.warframe.market/v1/items'))
         .payload.items;
 }
-async
-
-function getSiblingItems(itemName) {
+async function getSiblingItems(itemName) {
     return JSON.parse(await request('https://api.warframe.market/v1/items/' +
             itemName))
         .payload.item.items_in_set;
 }
-async
-
-function getItemOrders(itemName) {
+async function getItemOrders(itemName) {
     return request('https://api.warframe.market/v1/items/' + itemName +
         '/orders');
 }
