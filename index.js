@@ -52,7 +52,18 @@ async function _main() {
                 };
             })
             //make sure that "_set" item is always the first one in array
-            .sort(sortBySet);
+            .sort((a, b) => {
+
+                if (a.name.includes('_set')) {
+                    return -1;
+                }
+
+                if (b.name.includes('_set')) {
+                    return 1;
+                }
+
+                return 0;
+            });
 
         if (_config.only_warframes && !setParts.some(setPart => setPart.name
                 .includes("neuroptics"))) {
@@ -85,7 +96,18 @@ async function _main() {
                     _config.platforms.includes(order.platform) &&
                     _config.regions.includes(order.region) &&
                     order.visible)
-                .sort(sortByPrice)[_config.position];
+                .sort((a, b) => {
+
+                    if (a.platinum < b.platinum) {
+                        return _config.type == 'sell' ? -1 : 1;
+                    }
+
+                    if (a.platinum > b.platinum) {
+                        return _config.type == 'sell' ? 1 : -1;
+                    }
+
+                    return 0;
+                })[_config.position];
             if (order != undefined) {
                 return {
                     platinum: order.platinum,
@@ -134,7 +156,17 @@ async function _main() {
         });
     }
 
-    result = result.sort(sortByProfit);
+    result = result.sort((a, b) => {
+        if (a.profit < b.profit) {
+            return _config.type == 'sell' ? 1 : -1;
+        }
+
+        if (a.profit > b.profit) {
+            return _config.type == 'sell' ? -1 : 1;
+        }
+
+        return 0;
+    });
 
     clipboardy.writeSync(result[0].orders.map(order => order.message).slice(
         1).join('\n'));
@@ -152,41 +184,7 @@ async function _main() {
     process.exit();
 }
 
-function sortByPrice(a, b) {
-    if (a.platinum < b.platinum) {
-        return _config.type == 'sell' ? -1 : 1;
-    }
-
-    if (a.platinum > b.platinum) {
-        return _config.type == 'sell' ? 1 : -1;
-    }
-
-    return 0;
-}
-
-function sortByProfit(a, b) {
-    if (a.profit < b.profit) {
-        return _config.type == 'sell' ? 1 : -1;
-    }
-
-    if (a.profit > b.profit) {
-        return _config.type == 'sell' ? -1 : 1;
-    }
-
-    return 0;
-}
-
-function sortBySet(a, b) {
-    if (a.name.includes('_set')) {
-        return -1;
-    }
-
-    if (b.name.includes('_set')) {
-        return 1;
-    }
-
-    return 0;
-}
+function sortByPrice(a, b) {}
 
 function formatDate(date) {
     let dd = date.getDate();
