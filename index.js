@@ -13,7 +13,7 @@ if (!error) {
 async function _main() {
     //clear console
     process.stdout.write('\033c');
-    let start = formatDate(new Date());
+    let start = new Date();
     let result = [];
 
     //get all items from market
@@ -134,13 +134,16 @@ async function _main() {
     }
 
     result = result.sort(sortByProfit);
-    let end = formatDate(new Date());
-    fs.writeFileSync('data_' + _config.type + '_' + end.split(' ').join(
-        '_') + '.json', JSON.stringify({
-        start,
-        end,
-        result
-    }, null, 2));
+    let end = new Date();
+    let formattedEnd = formatDate(end);
+    fs.writeFileSync('./' + formattedEnd.split(' ').join('_') + '.json',
+        JSON.stringify({
+            _config,
+            start: formatDate(start),
+            end: formattedEnd,
+            duration: differenceInSeconds(start, end),
+            result
+        }, null, 2));
     process.exit();
 }
 
@@ -246,4 +249,8 @@ function readConfig() {
             regionValues.map(value => "'" + value + "'").join(', ') +
             ']'));
     }
+}
+
+function differenceInSeconds(date1, date2) {
+    return Math.abs(date1.getTime() - date2.getTime()) / 1000;
 }
