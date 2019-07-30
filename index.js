@@ -137,10 +137,10 @@ async function _main() {
     let end = formatDate(new Date());
     fs.writeFileSync('data_' + _config.type + '_' + end.split(' ').join(
         '_') + '.json', JSON.stringify({
-            start,
-            end,
-            result
-        }, null, 2));
+        start,
+        end,
+        result
+    }, null, 2));
     process.exit();
 }
 
@@ -220,23 +220,26 @@ function readConfig() {
     let statusValues = ['ingame', 'online', 'offline'];
     let regionValues = ['en', 'ru', 'fr', 'de', 'ko', 'zh', 'sv'];
 
-    if (!typeValues.includes(_config.type)) {
+    if (!_config.hasOwnProperty('type') || !typeValues.includes(_config.type)) {
         error = true;
         console.log(chalk.red('Error, type can only be a part of [' + typeValues
             .map(value => "'" + value + "'").join(', ') + ']'));
-    } else if (!_config.platforms || _config.platforms.length == 0 || !_config
+    } else if (!_config.hasOwnProperty('platforms') || !_config.platforms ||
+        _config.platforms.length == 0 || !_config
         .platforms.every(platform => platformValues.includes(platform))) {
         error = true;
         console.log(chalk.red('Error, platforms can only be a part of [' +
             platformValues.map(value => "'" + value + "'").join(', ') +
             ']'));
-    } else if (!_config.statuses || _config.statuses.length == 0 || !_config
+    } else if (!_config.hasOwnProperty('statuses') || !_config.statuses ||
+        _config.statuses.length == 0 || !_config
         .statuses.every(status => statusValues.includes(status))) {
         error = true;
         console.log(chalk.red('Error, statuses can only be a part of [' +
             statusValues.map(value => "'" + value + "'").join(', ') +
             ']'));
-    } else if (!_config.regions || _config.regions.length == 0 || !_config
+    } else if (!_config.hasOwnProperty('regions') || !_config.regions || _config
+        .regions.length == 0 || !_config
         .regions.every(region => regionValues.includes(region))) {
         error = true;
         console.log(chalk.red('Error, regions can only be a part of [' +
