@@ -272,5 +272,5 @@ function differenceInSeconds(date1, date2) {
 }
 
 function differenceInDays(date1, date2) {
-    return Math.abs(date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24);
+    return differenceInSeconds(date1, date2) / (60 * 60 * 24);
 }
