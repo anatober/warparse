@@ -197,7 +197,7 @@ async function parse() {
 
     fs.writeFileSync(filePath,
         JSON.stringify({
-            _config,
+            config: (_config.put_config_in_output ? _config : null),
             start: formatDate(start),
             end: formattedEnd,
             duration: differenceInSeconds(start, end),
