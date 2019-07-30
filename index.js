@@ -180,7 +180,7 @@ async function parse() {
 
     let end = new Date();
     let formattedEnd = formatDate(end);
-    fs.writeFileSync('./' + formattedEnd.split(' ').join('_') + '.json',
+    fs.writeFileSync('./parse/' + formattedEnd.split(' ').join('_') + '.json',
         JSON.stringify({
             _config,
             start: formatDate(start),
