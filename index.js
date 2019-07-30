@@ -2,6 +2,7 @@ const fs = require('fs');
 const request = require('request-promise');
 const chalk = require('chalk');
 const clipboardy = require('clipboardy');
+const os = require('os');
 
 let _config = {};
 let error = false;
@@ -180,7 +181,7 @@ async function parse() {
 
     if (_config.copy_messages_to_clipboard) {
         clipboardy.writeSync(result[_config.result_to_copy_messages_from]
-            .orders.map(order => order.message).slice(1).join('\n'));
+            .orders.map(order => order.message).slice(1).join(os.EOL));
     }
 
     let filePath = _config.parse_folder_name + '/' + formattedEnd.split(' ')
