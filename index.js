@@ -84,10 +84,9 @@ async function _main() {
                     platinum: order.platinum,
                     ducats: ducats[index],
                     message: '/w ' + order.user.ingame_name +
-                        ' I want to buy [' + titleCase(setParts[
+                        ' hi! wtb your [' + titleCase(setParts[
                             index].name.split('_').join(' ')) +
-                        '] for ' + order.platinum +
-                        ' :platinum: (warframe.market)',
+                        '] :)',
                     part: 'https://warframe.market/items/' +
                         setParts[index].name,
                     user: 'https://warframe.market/profile/' + order
