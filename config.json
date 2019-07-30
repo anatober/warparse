@@ -14,9 +14,9 @@
 	},
 	"parse": {
 		"folder": "./parse",
-    	"copy_messages_to_clipboard": true,
-    	"result_to_copy_messages_from": 0,
-    	"put_config_in_output": false
+		"copy_messages_to_clipboard": true,
+		"result_to_copy_messages_from": 0,
+		"put_config_in_output": false
 	},
 	"consolidation": {
 		"interval": 3600000,
