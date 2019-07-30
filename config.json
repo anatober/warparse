@@ -1,5 +1,6 @@
 {
-    "position": 0,
+    "set_position": 0,
+    "part_position": 0,
     "type": "sell",
     "min_reputation": 0,
     "platforms": ["pc"],
