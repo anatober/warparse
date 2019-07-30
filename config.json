@@ -11,5 +11,7 @@
     "only_warframes": true,
     "consolidation_interval": 3600000,
     "parse_folder_name": "./parse",
-    "consolidation_folder_name": "./consolidation"
+    "consolidation_folder_name": "./consolidation",
+    "copy_messages_to_clipboard": true,
+    "result_to_copy_messages_from": 0
 }
