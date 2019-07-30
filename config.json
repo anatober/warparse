@@ -1,18 +1,24 @@
 {
-    "set_position": 0,
-    "part_position": 0,
-    "type": "sell",
-    "min_reputation": 0,
-    "platforms": ["pc"],
-    "regions": ["en", "ru", "fr", "de", "ko", "zh", "sv"],
-    "statuses": ["ingame", "online"],
-    "min_price": 2,
-    "max_price": 500,
-    "only_warframes": true,
-    "consolidation_interval": 3600000,
-    "parse_folder_name": "./parse",
-    "consolidation_folder_name": "./consolidation",
-    "copy_messages_to_clipboard": true,
-    "result_to_copy_messages_from": 0,
-    "put_config_in_output": false
+	"filter": {
+		"set_position": 0,
+	    "part_position": 0,
+	    "type": "sell",
+	    "min_reputation": 0,
+	    "platforms": ["pc"],
+	    "regions": ["en", "ru", "fr", "de", "ko", "zh", "sv"],
+	    "statuses": ["ingame", "online"],
+	    "min_price": 2,
+	    "max_price": 500,
+	    "only_warframes": true
+	},
+	"parse": {
+		"folder": "./parse",
+    	"copy_messages_to_clipboard": true,
+    	"result_to_copy_messages_from": 0,
+    	"put_config_in_output": false
+	},
+	"consolidation": {
+		"interval": 3600000,
+		"folder": "./consolidation"
+	}
 }
