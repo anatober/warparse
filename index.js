@@ -1,6 +1,7 @@
 const fs = require('fs');
 const request = require('request-promise');
 const chalk = require('chalk');
+const clipboardy = require('clipboardy');
 
 let _config = {};
 let error = false;
@@ -134,6 +135,10 @@ async function _main() {
     }
 
     result = result.sort(sortByProfit);
+
+    clipboardy.writeSync(result[0].orders.map(order => order.message).slice(
+        1).join('\n'));
+
     let end = new Date();
     let formattedEnd = formatDate(end);
     fs.writeFileSync('./' + formattedEnd.split(' ').join('_') + '.json',
