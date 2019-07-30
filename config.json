@@ -18,7 +18,8 @@
 		"folder": "./parse",
 		"copy_messages_to_clipboard": true,
 		"result_to_copy_messages_from": 0,
-		"put_config_in_output": false
+		"put_config_in_output": false,
+		"plat_in_message": true
 	},
 	"consolidation": {
 		"interval": 3600000,

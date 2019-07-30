@@ -21,9 +21,12 @@ if (!error) {
 async function consolidate() {}
 
 async function parse() {
+
     process.stdout.write('\033c');
+
     let start = new Date();
     let result = [];
+
     let items = JSON.parse(await request(
         'https://api.warframe.market/v1/items')).payload.items;
     console.log('Found ' + chalk.green(items.length) +
@@ -32,6 +35,7 @@ async function parse() {
         item => item.url_name);
     console.log('Found ' + chalk.green(sets.length) +
     ' sets. Iterating...');
+
     for (let i = 0; i < sets.length; ++i) {
         let name = titleCase(sets[i].slice(0, sets[i].length - 4).split('_')
             .join(' '));
@@ -69,17 +73,19 @@ async function parse() {
         });
         allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
             let order = JSON.parse(curPartOrders).payload.orders
-                .filter(order => order.order_type == _config.filter
-                    .type && _config.filter.statuses.includes(order
+                .filter(order =>
+                    order.order_type == _config.filter.type
+                    && _config.filter.statuses.includes(order
                         .user.status) && (order.user.reputation >=
                         _config.filter.min_reputation || index == 0
-                        ) && !_config.blacklist[_config.nick]
-                    .includes(order.user.ingame_name) && order
-                    .platinum >= _config.filter.min_price && order
-                    .platinum <= _config.filter.max_price && _config
-                    .filter.platforms.includes(order.platform) &&
-                    _config.filter.regions.includes(order.region) &&
-                    differenceInDays(start, new Date(order
+                        )
+                    && !_config.blacklist[_config.nick]
+                    .includes(order.user.ingame_name)
+                    && order.platinum >= _config.filter.min_price
+                    && order.platinum <= _config.filter.max_price
+                    && _config.filter.platforms.includes(order.platform)
+                    && _config.filter.regions.includes(order.region)
+                    && differenceInDays(start, new Date(order
                         .last_update)) <= _config.filter
                     .max_days_diff && order.visible).sort((a,
                 b) => {
@@ -107,7 +113,7 @@ async function parse() {
                                     ' ')) + '] bp') : ('[' +
                                 titleCase(setParts[index].name
                                     .split('_').join(' ')) + ']')) +
-                        ' for ' + order.platinum + ' :platinum: :)',
+                        (_config.parse.plat_in_message ? ' for ' + order.platinum + ' :platinum:' : '') + ' :)',
                     region: order.region,
                     part: 'https://warframe.market/items/' +
                         setParts[index].name,
