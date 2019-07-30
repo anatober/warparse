@@ -27,7 +27,7 @@ async function parse() {
         .map(item => item.url_name);
     console.log('Found ' + chalk.green(sets.length) + ' sets. Iterating...');
     for (let i = 0; i < sets.length; ++i) {
-        try {
+        //try {
             let name = titleCase(sets[i].slice(0, sets[i].length - 4)
                 .split('_')
                 .join(' '));
@@ -135,8 +135,7 @@ async function parse() {
                     accumulator.needed += index == 0 ? 0 : currentValue
                         .platinum;
                     accumulator.ducats += currentValue.ducats;
-                    return
-                    accumulator;
+                    return accumulator;
                 }, {
                     needed: 0,
                     ducats: 0
@@ -151,9 +150,9 @@ async function parse() {
                     orders: allPartsOrders
                 }, ...amounts
             });
-        } catch (e) {
+        /*} catch (e) {
             console.log(chalk.red("Something went wrong."));
-        }
+        }*/
     }
     result = result.sort((a, b) => {
         if (a.profit < b.profit) {
@@ -173,7 +172,7 @@ async function parse() {
             .join(os.EOL));
     }
     let filePath = 'data.json';
-    _config.parse.folder + '/' + formattedEnd.split(' ')
+    /*_config.parse.folder + '/' + formattedEnd.split(' ')
         .join('/') + '.json';
     if (!fs.existsSync(_config.parse.folder)) {
         fs.mkdirSync(_config.parse.folder);
@@ -184,7 +183,7 @@ async function parse() {
             fs.mkdirSync(secondFolder);
         }
         fs.openSync(filePath, 'w');
-    }
+    }*/
     fs.writeFileSync(filePath, JSON.stringify({
         config: (_config.put_config_in_output ? _config : null),
         start: formatDate(start),
