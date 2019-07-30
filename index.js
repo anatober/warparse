@@ -27,8 +27,7 @@ async function parse() {
     let start = new Date();
     let result = [];
 
-    let items = JSON.parse(await request(
-        'https://api.warframe.market/v1/items')).payload.items;
+    let items = await getAllItems();
     console.log('Found ' + chalk.green(items.length) +
         ' items. Filtering sets...');
     let sets = items.filter(item => item.url_name.endsWith('_set')).map(
@@ -37,119 +36,121 @@ async function parse() {
     ' sets. Iterating...');
 
     for (let i = 0; i < sets.length; ++i) {
-        let name = titleCase(sets[i].slice(0, sets[i].length - 4).split('_')
-            .join(' '));
-        console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i <
-            9 ? '\t' : '') + chalk.yellow(name));
-        let setParts = JSON.parse(await request(
-                'https://api.warframe.market/v1/items/' + sets[i])).payload
-            .item.items_in_set.map(item => {
-                return {
-                    name: item.url_name,
-                    ducats: item.ducats
-                };
-            }).sort((a, b) => {
-                if (a.name.includes('_set')) {
-                    return -1;
-                }
-                if (b.name.includes('_set')) {
-                    return 1;
-                }
-                return 0;
-            });
-        if (_config.filter.only_warframes && !setParts.some(setPart =>
-                setPart.name.includes("neuroptics"))) {
-            console.log("Only warframes. Skipping...");
-            continue;
-        }
-        let ducats = setParts.map(setPart => (setPart.ducats == undefined ?
-            0 : setPart.ducats));
-        let allPartsOrders = await Promise.all(setParts.map(setPart =>
-            request('https://api.warframe.market/v1/items/' +
-                setPart.name + '/orders')));
-        setParts.forEach(setPart => {
-            console.log(chalk.yellow('\t\t> ') + titleCase(setPart
-                .name.split('_').join(' ')));
-        });
-        allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
-            let sortedOrders = JSON.parse(curPartOrders).payload.orders
-            .filter(order =>
-                order.order_type == _config.filter.type
-                && _config.filter.statuses.includes(order
-                    .user.status) && (order.user.reputation >=
-                    _config.filter.min_reputation || index == 0
-                    )
-                && !_config.blacklist[_config.nick]
-                .includes(order.user.ingame_name)
-                && order.platinum >= _config.filter.min_price
-                && order.platinum <= _config.filter.max_price
-                && _config.filter.platforms.includes(order.platform)
-                && _config.filter.regions.includes(order.region)
-                && differenceInDays(start, new Date(order
-                    .last_update)) <= _config.filter
-                .max_days_diff && order.visible).sort((a,
-            b) => {
-                if (a.platinum < b.platinum) {
-                    return _config.filter.type == 'sell' ?
-                        1 : 1;
-                }
-                if (a.platinum > b.platinum) {
-                    return _config.filter.type == 'sell' ?
-                        1 : -1;
-                }
-                return 0;
-            });
-            let position = index == 0 ? _config.filter.set_position : _config.filter.part_position;
-            let order = sortedOrders[position >= sortedOrders.length ? sortedOrders.length - 1 : position];
-            if (order != undefined) {
-                return {
-                    platinum: order.platinum,
-                    ducats: ducats[index],
-                    message: '/w ' + order.user.ingame_name +
-                        ' hi! ' + ((_config.filter.type == 'sell') ?
-                            'wtb your ' : 'wts my ') + (setParts[
-                                index].name.includes('blueprint') ?
-                            ('[' + titleCase(setParts[index].name
-                                .split('_').slice(0, -1).join(
-                                    ' ')) + '] bp') : ('[' +
-                                titleCase(setParts[index].name
-                                    .split('_').join(' ')) + ']')) +
-                        (_config.parse.plat_in_message ? ' for ' + order.platinum + ' :platinum:' : '') + ' :)',
-                    region: order.region,
-                    part: 'https://warframe.market/items/' +
-                        setParts[index].name,
-                    user: 'https://warframe.market/profile/' + order
-                        .user.ingame_name,
-                    update: formatDate(new Date(order.last_update))
-                };
+        try {
+            let name = titleCase(sets[i].slice(0, sets[i].length - 4).split('_')
+                .join(' '));
+            console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i <
+                9 ? '\t' : '') + chalk.yellow(name));
+            let setParts = (await getSiblingItems(sets[i])).map(item => {
+                    return {
+                        name: item.url_name,
+                        ducats: item.ducats
+                    };
+                }).sort((a, b) => {
+                    if (a.name.includes('_set')) {
+                        return -1;
+                    }
+                    if (b.name.includes('_set')) {
+                        return 1;
+                    }
+                    return 0;
+                });
+            if (_config.filter.only_warframes && !setParts.some(setPart =>
+                    setPart.name.includes("neuroptics"))) {
+                console.log("Only warframes. Skipping...");
+                continue;
             }
-        });
-        if (allPartsOrders.some(value => value == undefined)) {
-            console.log(chalk.red('Error: No fitting orders found.'));
-            continue;
+            let ducats = setParts.map(setPart => (setPart.ducats == undefined ?
+                0 : setPart.ducats));
+            let allPartsOrders = await Promise.all(setParts.map(setPart =>
+                getItemOrders(setPart.name)));
+            setParts.forEach(setPart => {
+                console.log(chalk.yellow('\t\t> ') + titleCase(setPart
+                    .name.split('_').join(' ')));
+            });
+            allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
+                let sortedOrders = JSON.parse(curPartOrders).payload.orders
+                .filter(order =>
+                    order.order_type == _config.filter.type
+                    && _config.filter.statuses.includes(order
+                        .user.status) && (order.user.reputation >=
+                        _config.filter.min_reputation || index == 0
+                        )
+                    && !_config.blacklist[_config.nick]
+                    .includes(order.user.ingame_name)
+                    && order.platinum >= _config.filter.min_price
+                    && order.platinum <= _config.filter.max_price
+                    && _config.filter.platforms.includes(order.platform)
+                    && _config.filter.regions.includes(order.region)
+                    && differenceInDays(start, new Date(order
+                        .last_update)) <= _config.filter
+                    .max_days_diff && order.visible).sort((a,
+                b) => {
+                    if (a.platinum < b.platinum) {
+                        return _config.filter.type == 'sell' ?
+                            1 : 1;
+                    }
+                    if (a.platinum > b.platinum) {
+                        return _config.filter.type == 'sell' ?
+                            1 : -1;
+                    }
+                    return 0;
+                });
+                let position = index == 0 ? _config.filter.set_position : _config.filter.part_position;
+                let order = sortedOrders[position >= sortedOrders.length ? sortedOrders.length - 1 : position];
+                if (order != undefined) {
+                    return {
+                        platinum: order.platinum,
+                        ducats: ducats[index],
+                        message: '/w ' + order.user.ingame_name +
+                            ' hi! ' + ((_config.filter.type == 'sell') ?
+                                'wtb your ' : 'wts my ') + (setParts[
+                                    index].name.includes('blueprint') ?
+                                ('[' + titleCase(setParts[index].name
+                                    .split('_').slice(0, -1).join(
+                                        ' ')) + '] bp') : ('[' +
+                                    titleCase(setParts[index].name
+                                        .split('_').join(' ')) + ']')) +
+                            (_config.parse.plat_in_message ? ' for ' + order.platinum + ' :platinum:' : '') + ' :)',
+                        region: order.region,
+                        part: 'https://warframe.market/items/' +
+                            setParts[index].name,
+                        user: 'https://warframe.market/profile/' + order
+                            .user.ingame_name,
+                        update: formatDate(new Date(order.last_update))
+                    };
+                }
+            });
+            if (allPartsOrders.some(value => value == undefined)) {
+                console.log(chalk.red('Error: No fitting orders found.'));
+                continue;
+            }
+            let amounts = allPartsOrders.reduce((accumulator, currentValue,
+                index) => {
+                accumulator.needed += index == 0 ? 0 : currentValue
+                    .platinum;
+                accumulator.ducats += currentValue.ducats;
+                return accumulator;
+            }, {
+                needed: 0,
+                ducats: 0
+            });
+            if (amounts.needed > _config.filter.max_needed) {
+                console.log(chalk.red('Error: No fitting orders found.'));
+                continue;
+            }
+            result.push({
+                ...{
+                    profit: allPartsOrders[0].platinum - amounts.needed,
+                    name,
+                    orders: allPartsOrders
+                },
+                ...amounts
+            });
         }
-        let amounts = allPartsOrders.reduce((accumulator, currentValue,
-            index) => {
-            accumulator.needed += index == 0 ? 0 : currentValue
-                .platinum;
-            accumulator.ducats += currentValue.ducats;
-            return accumulator;
-        }, {
-            needed: 0,
-            ducats: 0
-        });
-        if (amounts.needed > _config.filter.max_needed) {
-            console.log(chalk.red('Error: No fitting orders found.'));
-            continue;
+        catch (e) {
+            console.log(chalk.red("Something went wrong."));
         }
-        result.push({
-            ...{
-                profit: allPartsOrders[0].platinum - amounts.needed,
-                name,
-                orders: allPartsOrders
-            },
-            ...amounts
-        });
     }
     result = result.sort((a, b) => {
         if (a.profit < b.profit) {
@@ -251,6 +252,18 @@ function readConfig() {
             regionValues.map(value => "'" + value + "'").join(', ') +
             ']'));
     }
+}
+
+async function getAllItems() {
+    return JSON.parse(await request('https://api.warframe.market/v1/items')).payload.items;
+}
+
+async function getSiblingItems(itemName) {
+    return JSON.parse(await request('https://api.warframe.market/v1/items/' + itemName)).payload.item.items_in_set;
+}
+
+async function getItemOrders(itemName) {
+    return request('https://api.warframe.market/v1/items/' + itemName + '/orders');
 }
 
 function differenceInSeconds(date1, date2) {
