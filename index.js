@@ -2,8 +2,13 @@ const fs = require('fs');
 const request = require('request-promise');
 const chalk = require('chalk');
 
-let _config = JSON.parse(fs.readFileSync('config.json'));
-_main();
+let _config = {};
+let error = false;
+
+readConfig();
+if (!error) {
+    _main();
+}
 
 async function _main() {
     //clear console
@@ -65,18 +70,19 @@ async function _main() {
         let allPartsOrders = await Promise.all(setParts.map(setPart =>
             request('https://api.warframe.market/v1/items/' +
                 setPart.name + '/orders')));
+
         allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
             //filter the orders and trim object on _config.position (0 by default, thus the cheapest one - sortByPrice())
             let order = JSON.parse(curPartOrders).payload.orders
                 .filter(order =>
-                    order.order_type == 'sell' &&
-                    order.user.status != 'offline' &&
+                    order.order_type == _config.type &&
+                    _config.statuses.includes(order.user.status) &&
                     order.user.reputation >= _config
                     .min_reputation &&
                     order.platinum >= _config.min_price &&
                     order.platinum <= _config.max_price &&
                     _config.platforms.includes(order.platform) &&
-                    //_config.regions.includes(order.region) &&
+                    _config.regions.includes(order.region) &&
                     order.visible)
                 .sort(sortByPrice)[_config.position];
             if (order != undefined) {
@@ -84,7 +90,9 @@ async function _main() {
                     platinum: order.platinum,
                     ducats: ducats[index],
                     message: '/w ' + order.user.ingame_name +
-                        ' hi! wtb your [' + titleCase(setParts[
+                        (_config.type == 'sell' ?
+                            ' hi! wtb your [' : 'hi! wts my [') +
+                        titleCase(setParts[
                             index].name.split('_').join(' ')) +
                         '] :)',
                     part: 'https://warframe.market/items/' +
@@ -126,22 +134,23 @@ async function _main() {
     }
 
     result = result.sort(sortByProfit);
-    fs.writeFileSync('data.json', JSON.stringify({
-        start,
-        end: formatDate(new Date()),
-        position: _config.position,
-        result
-    }, null, 2));
+    let end = formatDate(new Date());
+    fs.writeFileSync('data_' + _config.type + '_' + end.split(' ').join(
+        '_') + '.json', JSON.stringify({
+            start,
+            end,
+            result
+        }, null, 2));
     process.exit();
 }
 
 function sortByPrice(a, b) {
     if (a.platinum < b.platinum) {
-        return -1;
+        return _config.type == 'sell' ? -1 : 1;
     }
 
     if (a.platinum > b.platinum) {
-        return 1;
+        return _config.type == 'sell' ? 1 : -1;
     }
 
     return 0;
@@ -149,11 +158,11 @@ function sortByPrice(a, b) {
 
 function sortByProfit(a, b) {
     if (a.profit < b.profit) {
-        return 1;
+        return _config.type == 'sell' ? 1 : -1;
     }
 
     if (a.profit > b.profit) {
-        return -1;
+        return _config.type == 'sell' ? -1 : 1;
     }
 
     return 0;
@@ -195,10 +204,43 @@ function formatDate(date) {
         ss = '0' + ss;
     }
 
-    return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + minutes + ':' + ss;
+    return dd + '.' + mm + '.' + yyyy + ' ' + hh + ':' + minutes + ':' + ss;
 }
 
 function titleCase(str) {
     return str.toLowerCase().split(' ').map(word => word.charAt(0)
         .toUpperCase() + word.substring(1)).join(' ');
+}
+
+function readConfig() {
+    _config = JSON.parse(fs.readFileSync('config.json'));
+
+    let typeValues = ['buy', 'sell'];
+    let platformValues = ['pc', 'ps4', 'xbox'];
+    let statusValues = ['ingame', 'online', 'offline'];
+    let regionValues = ['en', 'ru', 'fr', 'de', 'ko', 'zh', 'sv'];
+
+    if (!typeValues.includes(_config.type)) {
+        error = true;
+        console.log(chalk.red('Error, type can only be a part of [' + typeValues
+            .map(value => "'" + value + "'").join(', ') + ']'));
+    } else if (!_config.platforms || _config.platforms.length == 0 || !_config
+        .platforms.every(platform => platformValues.includes(platform))) {
+        error = true;
+        console.log(chalk.red('Error, platforms can only be a part of [' +
+            platformValues.map(value => "'" + value + "'").join(', ') +
+            ']'));
+    } else if (!_config.statuses || _config.statuses.length == 0 || !_config
+        .statuses.every(status => statusValues.includes(status))) {
+        error = true;
+        console.log(chalk.red('Error, statuses can only be a part of [' +
+            statusValues.map(value => "'" + value + "'").join(', ') +
+            ']'));
+    } else if (!_config.regions || _config.regions.length == 0 || !_config
+        .regions.every(region => regionValues.includes(region))) {
+        error = true;
+        console.log(chalk.red('Error, regions can only be a part of [' +
+            regionValues.map(value => "'" + value + "'").join(', ') +
+            ']'));
+    }
 }
