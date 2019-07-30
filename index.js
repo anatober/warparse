@@ -8,10 +8,17 @@ let error = false;
 
 readConfig();
 if (!error) {
-    _main();
+    if (process.argv.length <= 2) {
+        parse();
+    } else if (process.argv.includes('--consolidation') || process.argv
+        .includes('-c')) {
+        setInterval(consolidate, _config.consolidation_interval);
+    }
 }
 
-async function _main() {
+async function consolidate() {}
+
+async function parse() {
     //clear console
     process.stdout.write('\033c');
     let start = new Date();
@@ -71,17 +78,17 @@ async function _main() {
             continue;
         }
 
-        setParts.forEach(setPart => {
-            console.log(chalk.yellow('\t\t> ') + titleCase(setPart
-                .name.split('_').join(' ')));
-        });
-
         let ducats = setParts.map(setPart => (setPart.ducats == undefined ?
             0 : setPart.ducats));
         //get existing orders for each of the existing items (including sets)
         let allPartsOrders = await Promise.all(setParts.map(setPart =>
             request('https://api.warframe.market/v1/items/' +
                 setPart.name + '/orders')));
+
+        setParts.forEach(setPart => {
+            console.log(chalk.yellow('\t\t> ') + titleCase(setPart
+                .name.split('_').join(' ')));
+        });
 
         allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
             //filter the orders
@@ -136,10 +143,9 @@ async function _main() {
 
         //calculate the amount of plat needed to buy the set's parts and their sum in ducats
         let amounts = allPartsOrders.reduce((accumulator, currentValue) => {
-            if (!currentValue.part.endsWith('_set')) {
-                accumulator.needed += currentValue.platinum;
-                accumulator.ducats += currentValue.ducats;
-            }
+            accumulator.needed += currentValue.part.endsWith(
+                '_set') ? 0 : currentValue.platinum;
+            accumulator.ducats += currentValue.ducats;
             return accumulator;
         }, {
             needed: 0,
