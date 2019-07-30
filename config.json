@@ -13,5 +13,6 @@
     "parse_folder_name": "./parse",
     "consolidation_folder_name": "./consolidation",
     "copy_messages_to_clipboard": true,
-    "result_to_copy_messages_from": 0
+    "result_to_copy_messages_from": 0,
+    "put_config_in_output": false
 }
