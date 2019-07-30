@@ -130,12 +130,10 @@ async function parse() {
                 return {
                     platinum: order.platinum,
                     ducats: ducats[index],
-                    message: '/w ' + order.user.ingame_name +
-                        (_config.filter.type == 'sell' ?
-                            ' hi! wtb your [' : 'hi! wts my [') +
-                        titleCase(setParts[
-                            index].name.split('_').join(' ')) +
-                        '] :)',
+                    message: '/w ' + order.user.ingame_name + ' hi! ' + ((_config.type == 'sell') ? 'wtb your ' : 'wts my ') +
+                        (setParts[index].name.includes('blueprint')
+                        ? ('[' + titleCase(setParts[index].name.split('_').slice(0, -1).join(' ')) + '] bp ')
+                        : ('[' + titleCase(setParts[index].name.split('_').join(' ')) + '] ')) + ' for ' + order.platinum + ' :platinum: :)',
                     part: 'https://warframe.market/items/' +
                         setParts[index].name,
                     user: 'https://warframe.market/profile/' + order
@@ -160,6 +158,11 @@ async function parse() {
             needed: 0,
             ducats: 0
         });
+
+        if (amounts.needed > _config.filter.max_needed) {
+            console.log(chalk.red('Error: No fitting orders found.'));
+            continue;
+        }
 
         result.push({
             ...{
@@ -193,7 +196,7 @@ async function parse() {
             .orders.map(order => order.message).slice(1).join(os.EOL));
     }
 
-    let filePath = _config.parse.folder + '/' + formattedEnd.split(' ')
+    let filePath = 'data.json';/*_config.parse.folder + '/' + formattedEnd.split(' ')
         .join('/') + '.json';
 
     if (!fs.existsSync(_config.parse.folder)) {
@@ -203,7 +206,7 @@ async function parse() {
             fs.mkdirSync(secondFolder);
         }
         fs.openSync(filePath, 'w');
-    }
+    }*/
 
     fs.writeFileSync(filePath,
         JSON.stringify({

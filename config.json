@@ -7,10 +7,11 @@
 		"platforms": ["pc"],
 		"regions": ["en", "ru", "fr", "de", "ko", "zh", "sv"],
 		"statuses": ["ingame", "online"],
-		"min_price": 2,
+		"min_price": 0,
 		"max_price": 500,
 		"only_warframes": true,
-		"max_days_diff": 2
+		"max_days_diff": 2,
+		"max_needed": 100
 	},
 	"parse": {
 		"folder": "./parse",
