@@ -175,12 +175,21 @@ async function parse() {
         return 0;
     });
 
+    let end = new Date();
+    let formattedEnd = formatDate(end);
+
     clipboardy.writeSync(result[0].orders.map(order => order.message).slice(
         1).join('\n'));
 
-    let end = new Date();
-    let formattedEnd = formatDate(end);
-    fs.writeFileSync('./parse/' + formattedEnd.split(' ').join('_') + '.json',
+    let filePath = _config.parse_folder_name + '/' + formattedEnd.split(' ')
+        .join('_') + '.json';
+
+    if (!fs.existsSync(_config.parse_folder_name)) {
+        fs.mkdirSync(_config.parse_folder_name);
+        fs.openSync(filePath, 'w');
+    }
+
+    fs.writeFileSync(filePath,
         JSON.stringify({
             _config,
             start: formatDate(start),
