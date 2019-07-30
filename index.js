@@ -27,7 +27,7 @@ async function parse() {
         .map(item => item.url_name);
     console.log('Found ' + chalk.green(sets.length) + ' sets. Iterating...');
     for (let i = 0; i < sets.length; ++i) {
-        //try {
+        try {
             let name = titleCase(sets[i].slice(0, sets[i].length - 4)
                 .split('_')
                 .join(' '));
@@ -150,9 +150,9 @@ async function parse() {
                     orders: allPartsOrders
                 }, ...amounts
             });
-        /*} catch (e) {
+        } catch (e) {
             console.log(chalk.red("Something went wrong."));
-        }*/
+        }
     }
     result = result.sort((a, b) => {
         if (a.profit < b.profit) {
