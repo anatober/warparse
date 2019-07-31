@@ -5,6 +5,7 @@ const clipboardy = require('clipboardy');
 const os = require('os');
 let _config = {};
 let error = false;
+let start = new Date();
 readConfig();
 if (!error) {
     if (process.argv.length <= 2) {
@@ -15,144 +16,138 @@ if (!error) {
         setInterval(consolidate, _config.consolidation_interval);
     }
 }
-async function consolidate() {}
+async function consolidate() {
+    let items = await getAllItems();
+    if (items.hasOwnProperty('exception')) {
+        console.log(items.exception);
+        return;
+    }
+    let existingObject = {};
+    for (let i = 0; i < items.length; ++i) {
+        (await getItemOrders(items[i].url_name))
+        .filter(filterOrders)
+            .sort();
+    }
+}
 async function parse() {
     process.stdout.write('\033c');
-    let start = new Date();
+    start = new Date();
     let result = [];
+    console.log("Parser started...");
     let items = await getAllItems();
+    if (items.hasOwnProperty('exception')) {
+        console.log(items.exception);
+        return;
+    }
     console.log('Found ' + chalk.green(items.length) +
         ' items. Filtering sets...');
     let sets = items.filter(item => item.url_name.endsWith('_set'))
         .map(item => item.url_name);
     console.log('Found ' + chalk.green(sets.length) + ' sets. Iterating...');
     for (let i = 0; i < sets.length; ++i) {
-        try {
-            let name = titleCase(sets[i].slice(0, sets[i].length - 4)
-                .split('_')
-                .join(' '));
-            console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i <
-                9 ? '\t' : '') + chalk.yellow(name));
-            let setParts = (await getSiblingItems(sets[i]))
-                .map(item => {
-                    return {
-                        name: item.url_name,
-                        ducats: item.ducats
-                    };
-                })
-                .sort((a, b) => {
-                    if (a.name.includes('_set')) {
-                        return -1;
-                    }
-                    if (b.name.includes('_set')) {
-                        return 1;
-                    }
-                    return 0;
-                });
-            if (_config.filter.only_warframes && !setParts.some(setPart =>
-                    setPart.name.includes("neuroptics"))) {
-                console.log("Only warframes. Skipping...");
-                continue;
-            }
-            let ducats = setParts.map(setPart => (setPart.ducats ==
-                undefined ? 0 : setPart.ducats));
-            let allPartsOrders = await Promise.all(setParts.map(setPart =>
-                getItemOrders(setPart.name)));
-            setParts.forEach(setPart => {
-                console.log(chalk.yellow('\t\t> ') + titleCase(
-                    setPart.name.split('_')
-                    .join(' ')));
-            });
-            allPartsOrders = allPartsOrders.map(
-                (curPartOrders, index) => {
-                    let sortedOrders = JSON.parse(curPartOrders)
-                        .payload.orders.filter(order => order.order_type ==
-                            _config.filter.type && _config.filter.statuses
-                            .includes(order.user.status) && (order.user
-                                .reputation >= _config.filter.min_reputation ||
-                                index == 0) && !_config.blacklist[
-                                _config.nick].includes(order.user.ingame_name) &&
-                            order.platinum >= _config.filter.min_price &&
-                            order.platinum <= _config.filter.max_price &&
-                            _config.filter.platforms.includes(order.platform) &&
-                            _config.filter.regions.includes(order.region) &&
-                            differenceInDays(start, new Date(order.last_update)) <=
-                            _config.filter.max_days_diff && order.visible
-                        )
-                        .sort((a, b) => {
-                            if (a.platinum < b.platinum) {
-                                return
-                                _config.filter.type == 'sell' ? -1 :
-                                    1;
-                            }
-                            if (a.platinum > b.platinum) {
-                                return
-                                _config.filter.type == 'sell' ? 1 :
-                                    -1;
-                            }
-                            return
-                            0;
-                        });
-                    let position = index == 0 ? _config.filter.set_position :
-                        _config.filter.part_position;
-                    let order = sortedOrders[position >= sortedOrders.length ?
-                        sortedOrders.length - 1 : position];
-                    if (order != undefined) {
-                        return {
-                            platinum: order.platinum,
-                            ducats: ducats[index],
-                            message: '/w ' + order.user.ingame_name +
-                                ' hi! ' + (
-                                    (_config.filter.type == 'sell') ?
-                                    'wtb your ' : 'wts my ') + (
-                                    setParts[index].name.includes(
-                                        'blueprint') ? ('[' + titleCase(
-                                        setParts[index].name.split(
-                                            '_')
-                                        .slice(0, -1)
-                                        .join(' ')) + '] bp') : ('[' +
-                                        titleCase(setParts[index].name.split(
-                                                '_')
-                                            .join(' ')) + ']')) + (
-                                    _config.parse.plat_in_message ?
-                                    ' for ' + order.platinum +
-                                    ' :platinum:' : '') + ' :)',
-                            region: order.region,
-                            part: 'https://warframe.market/items/' +
-                                setParts[index].name,
-                            user: 'https://warframe.market/profile/' +
-                                order.user.ingame_name,
-                            update: formatDate(new Date(order.last_update))
-                        };
-                    }
-                });
-            if (allPartsOrders.some(value => value == undefined)) {
-                console.log(chalk.red('Error: No fitting orders found.'));
-                continue;
-            }
-            let amounts = allPartsOrders.reduce(
-                (accumulator, currentValue, index) => {
-                    accumulator.needed += index == 0 ? 0 : currentValue
-                        .platinum;
-                    accumulator.ducats += currentValue.ducats;
-                    return accumulator;
-                }, {
-                    needed: 0,
-                    ducats: 0
-                });
-            if (amounts.needed > _config.filter.max_needed) {
-                console.log(chalk.red('Error: No fitting orders found.'));
-                continue;
-            }
-            result.push({... {
-                    profit: allPartsOrders[0].platinum - amounts.needed,
-                    name,
-                    orders: allPartsOrders
-                }, ...amounts
-            });
-        } catch (e) {
-            console.log(chalk.red("Something went wrong."));
+        let name = titleCase(sets[i].slice(0, sets[i].length - 4)
+            .split('_')
+            .join(' '));
+        console.log(chalk.green(i + 1) + ' / ' + sets.length + '\t' + (i <
+            9 ? '\t' : '') + chalk.yellow(name));
+        let siblingItems = await getSiblingItems(sets[i]);
+        if (siblingItems.hasOwnProperty('exception')) {
+            console.log(siblingItems.exception);
+            continue;
         }
+        let setParts = siblingItems.map(item => {
+                return {
+                    name: item.url_name,
+                    ducats: item.ducats
+                };
+            })
+            .sort((a, b) => {
+                if (a.name.includes('_set')) {
+                    return -1;
+                }
+                if (b.name.includes('_set')) {
+                    return 1;
+                }
+                return 0;
+            });
+        if (_config.filter.only_warframes && !setParts.some(setPart =>
+                setPart.name.includes("neuroptics"))) {
+            console.log("Only warframes. Skipping...");
+            continue;
+        }
+        let ducats = setParts.map(setPart => (setPart.ducats == undefined ?
+            0 : setPart.ducats));
+        let allPartsOrders = {};
+        try {
+            allPartsOrders = await Promise.all(setParts.map(setPart =>
+                getItemOrders(setPart.name)));
+        }
+        catch (e) {
+            console.log(chalk.red("Error while getting orders for " + setParts.map(setPart => setPart.name)));
+            continue;
+        }
+        setParts.forEach(setPart => {
+            console.log(chalk.yellow('\t\t> ') + titleCase(setPart.name
+                .split('_')
+                .join(' ')));
+        });
+        allPartsOrders = allPartsOrders.map((curPartOrders, index) => {
+            let sortedOrders = JSON.parse(curPartOrders)
+                .payload.orders.filter(filterOrders)
+                .sort(sortByPlat);
+            let position = index == 0 ? _config.filter.set_position :
+                _config.filter.part_position;
+            let order = sortedOrders[position >= sortedOrders.length ?
+                sortedOrders.length - 1 : position];
+            if (order != undefined) {
+                return {
+                    platinum: order.platinum,
+                    ducats: ducats[index],
+                    message: '/w ' + order.user.ingame_name +
+                        ' hi! ' + ((_config.filter.type == 'sell') ?
+                            'wtb your ' : 'wts my ') + (setParts[
+                                index].name.includes('blueprint') ?
+                            ('[' + titleCase(setParts[index].name.split(
+                                    '_')
+                                .slice(0, -1)
+                                .join(' ')) + '] bp') : ('[' +
+                                titleCase(setParts[index].name.split(
+                                        '_')
+                                    .join(' ')) + ']')) + (_config.parse
+                            .plat_in_message ? ' for ' + order.platinum +
+                            ' :platinum:' : '') + ' :)',
+                    region: order.region,
+                    part: 'https://warframe.market/items/' +
+                        setParts[index].name,
+                    user: 'https://warframe.market/profile/' +
+                        order.user.ingame_name,
+                    update: formatDate(new Date(order.last_update))
+                };
+            }
+        });
+        if (allPartsOrders.some(value => value == undefined)) {
+            console.log(chalk.red('Error: No fitting orders found.'));
+            continue;
+        }
+        let amounts = allPartsOrders.reduce((accumulator, currentValue,
+            index) => {
+            accumulator.needed += index == 0 ? 0 : currentValue.platinum;
+            accumulator.ducats += currentValue.ducats;
+            return accumulator;
+        }, {
+            needed: 0,
+            ducats: 0
+        });
+        if (amounts.needed > _config.filter.max_needed) {
+            console.log(chalk.red('Error: No fitting orders found.'));
+            continue;
+        }
+        result.push({... {
+                profit: allPartsOrders[0].platinum - amounts.needed,
+                name,
+                orders: allPartsOrders
+            }, ...amounts
+        });
     }
     result = result.sort((a, b) => {
         if (a.profit < b.profit) {
@@ -172,7 +167,7 @@ async function parse() {
             .join(os.EOL));
     }
     let filePath = 'data.json';
-    /*_config.parse.folder + '/' + formattedEnd.split(' ')
+    _config.parse.folder + '/' + formattedEnd.split(' ')
         .join('/') + '.json';
     if (!fs.existsSync(_config.parse.folder)) {
         fs.mkdirSync(_config.parse.folder);
@@ -183,7 +178,7 @@ async function parse() {
             fs.mkdirSync(secondFolder);
         }
         fs.openSync(filePath, 'w');
-    }*/
+    }
     fs.writeFileSync(filePath, JSON.stringify({
         config: (_config.put_config_in_output ? _config : null),
         start: formatDate(start),
@@ -219,24 +214,12 @@ function formatDate(date) {
     return dd + '.' + mm + '.' + yyyy + ' ' + hh + ':' + minutes + ':' + ss;
 }
 
-function titleCase(str) {
-    return str.toLowerCase()
-        .split(' ')
-        .map(word => word.charAt(0)
-            .toUpperCase() + word.substring(1))
-        .join(' ');
-}
-
 function readConfig() {
     _config = JSON.parse(fs.readFileSync('config.json'));
     let typeValues = ['buy', 'sell'];
-    let platformValues = ['pc',
-        'ps4', 'xbox'];
-    let statusValues = ['ingame',
-        'online', 'offline'];
-    let regionValues = ['en', 'ru',
-        'fr', 'de', 'ko', 'zh',
-        'sv'];
+    let platformValues = ['pc', 'ps4', 'xbox'];
+    let statusValues = ['ingame', 'online', 'offline'];
+    let regionValues = ['en', 'ru', 'fr', 'de', 'ko', 'zh', 'sv'];
     if (!_config.filter.hasOwnProperty('type') || !typeValues.includes(
             _config.filter.type)) {
         error = true;
@@ -267,13 +250,27 @@ function readConfig() {
     }
 }
 async function getAllItems() {
-    return JSON.parse(await request('https://api.warframe.market/v1/items'))
-        .payload.items;
+    let result = {};
+    try {
+        result = JSON.parse(await request(
+                'https://api.warframe.market/v1/items'))
+            .payload.items;
+    } catch (e) {
+        result['exception'] = chalk.red('Error while getting item list...');
+    }
+    return result;
 }
 async function getSiblingItems(itemName) {
-    return JSON.parse(await request('https://api.warframe.market/v1/items/' +
-            itemName))
-        .payload.item.items_in_set;
+    let result = {};
+    try {
+        result = JSON.parse(await request(
+                'https://api.warframe.market/v1/items/' + itemName))
+            .payload.item.items_in_set
+    } catch (e) {
+        result['exception'] = chalk.red(
+            'Error while getting item\'s siblings: ' + itemName);
+    }
+    return result;
 }
 async function getItemOrders(itemName) {
     return request('https://api.warframe.market/v1/items/' + itemName +
@@ -286,4 +283,33 @@ function differenceInSeconds(date1, date2) {
 
 function differenceInDays(date1, date2) {
     return differenceInSeconds(date1, date2) / (60 * 60 * 24);
+}
+
+function filterOrders(order) {
+    return order.order_type == _config.filter.type && _config.filter.statuses
+        .includes(order.user.status) && (order.user.reputation >= _config.filter
+            .min_reputation || index == 0) && !_config.blacklist[_config.nick]
+        .includes(order.user.ingame_name) && order.platinum >= _config.filter
+        .min_price && order.platinum <= _config.filter.max_price && _config
+        .filter.platforms.includes(order.platform) && _config.filter.regions
+        .includes(order.region) && differenceInDays(start, new Date(order.last_update)) <=
+        _config.filter.max_days_diff && order.visible;
+}
+
+function titleCase(str) {
+    return str.toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0)
+            .toUpperCase() + word.substring(1))
+        .join(' ');
+}
+
+function sortByPlat(a, b) {
+    if (a.platinum < b.platinum) {
+        return _config.filter.type == 'sell' ? -1 : 1;
+    }
+    if (a.platinum > b.platinum) {
+        return _config.filter.type == 'sell' ? 1 : -1;
+    }
+    return 0;
 }
