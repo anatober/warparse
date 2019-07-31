@@ -12,22 +12,48 @@ if (!error) {
         parse();
     } else if (process.argv.includes('--consolidation') || process.argv.includes(
             '-c')) {
+        process.stdout.write('\033c');
         consolidate();
-        setInterval(consolidate, _config.consolidation_interval);
+        setInterval(consolidate, _config.consolidation.interval);
     }
 }
 async function consolidate() {
+    console.log(formatDate(new Date()) + " - condolidation started...");
+    let consolidatedData = {};
+    try {
+        consolidatedData = JSON.parse(fs.readFileSync('consolidatedData.json'));
+    }
+    catch (e) {
+        console.log("consolidatedData.json not found, will create anew.")
+    }
     let items = await getAllItems();
+    console.log('Found ' + chalk.green(items.length) +
+        ' items.');
     if (items.hasOwnProperty('exception')) {
         console.log(items.exception);
         return;
     }
-    let existingObject = {};
     for (let i = 0; i < items.length; ++i) {
-        (await getItemOrders(items[i].url_name))
-        .filter(filterOrders)
-            .sort();
+        let name = titleCase(items[i].url_name.split('_').join(' '));
+        console.log(chalk.green(i + 1) + ' / ' + items.length + '\t' + (i <
+            9 ? '\t' : '') + chalk.yellow(name));
+        let thisItemOrders = {};
+        try {
+            thisItemOrders = JSON.parse(await getItemOrders(items[i].url_name)).payload.orders;
+        }
+        catch (e) {
+            console.log("Error while getting item\'s orders: " + items[i].url_name);
+            continue;
+        }
+
+        let newObj = {};
+        newObj[formatDate(new Date())] = thisItemOrders.filter(filterOrders)
+            .sort()[items[i].url_name.endsWith('_set') ? _config.filter.set_position :
+            _config.filter.part_position].platinum;
+        consolidatedData[name] = { ...consolidatedData[name], ...newObj};
     }
+    console.log("Writing to file. Waiting for the next iteration...");
+    fs.writeFileSync('consolidatedData.json', JSON.stringify(consolidatedData, null, 2));
 }
 async function parse() {
     process.stdout.write('\033c');
