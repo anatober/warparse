@@ -193,7 +193,7 @@ async function parse() {
             .join(os.EOL));
     }
     let filePath = 'data.json';
-    _config.parse.folder + '/' + formattedEnd.split(' ')
+    /*_config.parse.folder + '/' + formattedEnd.split(' ')
         .join('/') + '.json';
     if (!fs.existsSync(_config.parse.folder)) {
         fs.mkdirSync(_config.parse.folder);
@@ -204,7 +204,7 @@ async function parse() {
             fs.mkdirSync(secondFolder);
         }
         fs.openSync(filePath, 'w');
-    }
+    }*/
     fs.writeFileSync(filePath, JSON.stringify({
         config: (_config.put_config_in_output ? _config : null),
         start: formatDate(start),
